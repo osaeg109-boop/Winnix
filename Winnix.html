@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Winnix Pro | منصة الألعاب الاحترافية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #0f172a; color: white; }
+        .neon-glow { text-shadow: 0 0 10px rgba(163, 255, 0, 0.5); }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Icons Helper ---
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const [svg, setSvg] = useState("");
+            useEffect(() => {
+                if (window.lucide) {
+                    const icon = window.lucide.icons[name];
+                    if (icon) setSvg(icon.toSvg({ size, class: className }));
+                }
+            }, [name, size, className]);
+            return <span dangerouslySetInnerHTML={{ __html: svg }} />;
+        };
+
+        // --- Shared Button Component ---
+        const Button = ({ children, variant = 'primary', className = '', ...props }) => {
+            const variants = {
+                primary: "bg-[#a3ff00] text-black hover:bg-[#8ee600] shadow-[0_0_15px_rgba(163,255,0,0.3)]",
+                secondary: "bg-slate-700 text-white hover:bg-slate-600",
+                danger: "bg-red-500 text-white hover:bg-red-600",
+                outline: "border border-slate-600 text-slate-300 hover:border-[#a3ff00]"
+            };
+            return (
+                <button className={`px-4 py-2 rounded-xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 ${variants[variant]} ${className}`} {...props}>
+                    {children}
+                </button>
+            );
+        };
+
+        // --- GAME: TOWER OF FORTUNE (New Exciting Game) ---
+        const TowerGame = ({ balance, updateBalance, onExit }) => {
+            const [stake, setStake] = useState(10);
+            const [currentLevel, setCurrentLevel] = useState(0); // 0 to 8
+            const [gameState, setGameState] = useState('idle'); // idle, playing, won, lost
+            const [tower, setTower] = useState([]); // Each level has 3 tiles, 1 is a bomb
+            const levels = 8;
+            const multipliers = [1.2, 1.5, 2.0, 3.0, 5.0, 10.0, 25.0, 50.0];
+
+            const startTower = () => {
+                if (balance < stake) return;
+                updateBalance(-stake);
+                const newTower = Array.from({ length: levels }, () => {
+                    const bombIdx = Math.floor(Math.random() * 3);
+                    return [0, 1, 2].map(i => i === bombIdx ? 'bomb' : 'safe');
+                });
+                setTower(newTower);
+                setCurrentLevel(0);
+                setGameState('playing');
+            };
+
+            const selectTile = (tileIdx) => {
+                if (gameState !== 'playing') return;
+                if (tower[currentLevel][tileIdx] === 'bomb') {
+                    setGameState('lost');
+                } else {
+                    if (currentLevel === levels - 1) {
+                        setGameState('won');
+                        updateBalance(stake * multipliers[currentLevel]);
+                    } else {
+                        setCurrentLevel(prev => prev + 1);
+                    }
+                }
+            };
+
+            const cashOut = () => {
+                if (currentLevel === 0 || gameState !== 'playing') return;
+                updateBalance(stake * multipliers[currentLevel - 1]);
+                setGameState('idle');
+            };
+
+            return (
+                <div className="w-full max-w-md mx-auto bg-[#1e293b] rounded-3xl p-6 border border-slate-700 shadow-2xl">
+                    <div className="flex justify-between items-center mb-4">
+                        <button onClick={onExit} className="text-slate-400"><Icon name="ChevronLeft" size={24}/></button>
+                        <h2 className="text-[#a3ff00] font-black text-xl">TOWER OF GAINS</h2>
+                    </div>
+
+                    <div className="flex flex-col-reverse gap-2 mb-6">
+                        {Array.from({ length: levels }).map((_, lIdx) => (
+                            <div key={lIdx} className={`grid grid-cols-3 gap-2 p-1 rounded-lg ${currentLevel === lIdx && gameState === 'playing' ? 'bg-[#a3ff00]/10 border border-[#a3ff00]/30' : 'opacity-40'}`}>
+                                <div className="text-[10px] text-slate-500 absolute -mr-8 mt-2">x{multipliers[lIdx]}</div>
+                                {[0, 1, 2].map(tIdx => (
+                                    <button 
+                                        key={tIdx}
+                                        disabled={currentLevel !== lIdx || gameState !== 'playing'}
+                                        onClick={() => selectTile(tIdx)}
+                                        className={`h-10 rounded-md transition-all ${gameState === 'lost' && tower[lIdx][tIdx] === 'bomb' ? 'bg-red-500' : (currentLevel > lIdx ? (tower[lIdx][tIdx] === 'safe' ? 'bg-[#a3ff00]' : 'bg-slate-700') : 'bg-slate-700')}`}
+                                    ></button>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+
+                    {gameState === 'playing' ? (
+                        <div className="space-y-3">
+                            <Button onClick={cashOut} disabled={currentLevel === 0} className="w-full py-4 bg-orange-500 text-white">سحب الأرباح ({currentLevel > 0 ? (stake * multipliers[currentLevel-1]).toFixed(2) : 0})</Button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <input type="number" value={stake} onChange={e => setStake(Number(e.target.value))} className="w-full bg-slate-900 p-3 rounded-xl border border-slate-700 outline-none text-[#a3ff00] font-bold" />
+                            <Button onClick={startTower} className="w-full py-4 text-lg">ابدأ الصعود</Button>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- GAME: AVIATOR (STOCHASTIC) ---
+        const AviatorGame = ({ balance, updateBalance, onExit }) => {
+            const [multiplier, setMultiplier] = useState(1.00);
+            const [gameState, setGameState] = useState('waiting'); // waiting, flying, crashed
+            const [betPlaced, setBetPlaced] = useState(false);
+            const [stake, setStake] = useState(10);
+            const [cashedOut, setCashedOut] = useState(false);
+            const [countDown, setCountDown] = useState(5);
+            const timerRef = useRef(null);
+            const crashPoint = useRef(1.00);
+
+            useEffect(() => {
+                if (gameState === 'waiting') {
+                    let cd = 5;
+                    setCountDown(cd);
+                    const interval = setInterval(() => {
+                        cd -= 1;
+                        setCountDown(cd);
+                        if (cd <= 0) {
+                            clearInterval(interval);
+                            startRound();
+                        }
+                    }, 1000);
+                    return () => clearInterval(interval);
+                }
+            }, [gameState]);
+
+            const startRound = () => {
+                setGameState('flying');
+                setCashedOut(false);
+                setMultiplier(1.00);
+                // House Edge Logic
+                crashPoint.current = Math.random() < 0.15 ? 1.00 : Math.max(1.01, (1 / (Math.random() || 0.01)) * 0.8);
+                if (crashPoint.current > 40) crashPoint.current = 40;
+
+                let current = 1.00;
+                timerRef.current = setInterval(() => {
+                    current += (current * 0.006);
+                    setMultiplier(current);
+                    if (current >= crashPoint.current) {
+                        clearInterval(timerRef.current);
+                        setGameState('crashed');
+                        setBetPlaced(false);
+                        setTimeout(() => setGameState('waiting'), 3000);
+                    }
+                }, 100);
+            };
+
+            const handleCashOut = () => {
+                if (betPlaced && gameState === 'flying' && !cashedOut) {
+                    updateBalance(stake * multiplier);
+                    setCashedOut(true);
+                }
+            };
+
+            return (
+                <div className="w-full max-w-2xl mx-auto bg-[#1e293b] rounded-3xl p-6 border border-slate-700 shadow-2xl text-center">
+                    <div className="flex justify-between items-center mb-4">
+                        <button onClick={onExit} className="text-slate-400"><Icon name="ChevronLeft" size={24}/></button>
+                        <h2 className="text-red-500 font-black text-xl flex items-center gap-2"><Icon name="Rocket"/> AVIATOR X</h2>
+                    </div>
+                    
+                    <div className="bg-[#0b1120] h-64 rounded-2xl mb-6 flex flex-col items-center justify-center relative overflow-hidden border-2 border-slate-800">
+                        {gameState === 'waiting' && <div className="z-10"><p className="text-slate-500 text-sm">الجولة القادمة</p><p className="text-[#a3ff00] text-6xl font-black">{countDown}</p></div>}
+                        {gameState === 'flying' && <div className="z-10"><p className="text-white text-7xl font-black animate-pulse">{multiplier.toFixed(2)}x</p></div>}
+                        {gameState === 'crashed' && <div className="z-10"><p className="text-red-500 text-xl font-bold">انفجرت!</p><p className="text-slate-500 text-6xl font-black">{multiplier.toFixed(2)}x</p></div>}
+                        {cashedOut && gameState === 'flying' && <div className="absolute top-4 bg-[#a3ff00] text-black px-4 py-1 rounded-full text-xs font-bold">تم السحب!</div>}
+                    </div>
+
+                    <div className="flex gap-4">
+                        <input type="number" value={stake} onChange={e => setStake(Number(e.target.value))} className="bg-slate-900 border border-slate-700 rounded-xl p-4 text-white w-1/3 outline-none" />
+                        {gameState === 'waiting' ? (
+                            <Button onClick={() => {if(balance >= stake){updateBalance(-stake); setBetPlaced(true)}}} disabled={betPlaced} className="flex-1 text-lg">{betPlaced ? 'تم وضع الرهان' : 'رهان'}</Button>
+                        ) : (
+                            <Button onClick={handleCashOut} disabled={!betPlaced || cashedOut || gameState === 'crashed'} className={`flex-1 text-lg ${betPlaced && !cashedOut ? 'bg-orange-500 text-white' : ''}`}>
+                                {cashedOut ? 'تم السحب' : 'سحب'}
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MAIN APP ---
+        function App() {
+            const [balance, setBalance] = useState(100.00);
+            const [view, setView] = useState('home');
+            const [modal, setModal] = useState(null);
+            const [form, setForm] = useState({ amount: '', pin: '' });
+            const [error, setError] = useState('');
+
+            const handleTransaction = () => {
+                if (form.pin !== '208090') { setError('الرمز خطأ'); return; }
+                const amt = parseFloat(form.amount);
+                if (isNaN(amt) || amt <= 0) return;
+
+                if (modal === 'deposit') {
+                    setBalance(prev => prev + amt);
+                } else {
+                    if (balance < amt) { setError('رصيد غير كاف'); return; }
+                    setBalance(prev => prev - amt);
+                }
+                setModal(null); setForm({ amount: '', pin: '' }); setError('');
+            };
+
+            return (
+                <div className="min-h-screen pb-20">
+                    <header className="sticky top-0 z-50 bg-[#162032]/90 backdrop-blur-md border-b border-slate-800 p-4 flex justify-between items-center">
+                        <div onClick={() => setView('home')} className="cursor-pointer font-black text-2xl tracking-tighter">WIN<span className="text-[#a3ff00]">NIX</span></div>
+                        <div className="flex items-center gap-2">
+                            <div className="bg-slate-900 px-4 py-1 rounded-full border border-slate-700 text-center min-w-[100px]">
+                                <p className="text-[9px] text-slate-500 font-bold uppercase">الرصيد</p>
+                                <p className="text-[#a3ff00] font-mono font-black">{balance.toFixed(2)}</p>
+                            </div>
+                            <button onClick={() => setModal('deposit')} className="bg-[#a3ff00] text-black p-2 rounded-lg"><Icon name="Wallet" size={20}/></button>
+                            <button onClick={() => setModal('withdraw')} className="bg-white text-black p-2 rounded-lg"><Icon name="ArrowDownCircle" size={20}/></button>
+                        </div>
+                    </header>
+
+                    <main className="container mx-auto p-4 md:p-8">
+                        {view === 'home' && (
+                            <div className="space-y-6">
+                                <div className="bg-gradient-to-r from-indigo-600 to-purple-800 rounded-3xl p-8 border border-white/10 relative overflow-hidden">
+                                    <h1 className="text-3xl font-black italic mb-2">العب واربح الآن</h1>
+                                    <p className="text-white/70 text-sm mb-6">أفضل الألعاب الفورية في مصر.</p>
+                                    <Button onClick={() => setModal('deposit')} className="px-8">شحن الرصيد</Button>
+                                    <Icon name="Zap" className="absolute -left-4 -bottom-4 text-white/5" size={150} />
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {[
+                                        { id: 'aviator', title: 'Aviator X', icon: 'Rocket', col: 'from-red-600 to-pink-600' },
+                                        { id: 'tower', title: 'Tower Win', icon: 'Layers', col: 'from-blue-600 to-indigo-600' },
+                                        { id: 'mines', title: 'Mines Pro', icon: 'Bomb', col: 'from-emerald-600 to-teal-600' }
+                                    ].map(g => (
+                                        <div key={g.id} onClick={() => setView(g.id)} className="bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-[#a3ff00] transition-all cursor-pointer group">
+                                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${g.col} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                                                <Icon name={g.icon} />
+                                            </div>
+                                            <h3 className="font-bold">{g.title}</h3>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'aviator' && <AviatorGame balance={balance} updateBalance={setBalance} onExit={() => setView('home')} />}
+                        {view === 'tower' && <TowerGame balance={balance} updateBalance={setBalance} onExit={() => setView('home')} />}
+                        {view === 'mines' && <div className="text-center py-20 text-slate-500"><Icon name="Bomb" size={48} className="mx-auto mb-4 opacity-20"/><p>لعبة الألغام قيد الصيانة...</p><Button onClick={() => setView('home')} variant="outline" className="mt-4 mx-auto">العودة</Button></div>}
+                    </main>
+
+                    {modal && (
+                        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+                            <div className="bg-[#1e293b] w-full max-w-sm rounded-3xl p-8 border border-slate-700">
+                                <h2 className="text-2xl font-black mb-6">{modal === 'deposit' ? 'إيداع' : 'سحب'}</h2>
+                                <input type="number" placeholder="المبلغ" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 mb-4 outline-none text-[#a3ff00]" />
+                                <input type="password" placeholder="الرمز السري" value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 mb-4 outline-none tracking-widest" />
+                                {error && <p className="text-red-500 text-xs mb-4 text-center">{error}</p>}
+                                <Button onClick={handleTransaction} className="w-full py-4 text-lg">تأكيد</Button>
+                                <button onClick={() => setModal(null)} className="w-full mt-4 text-slate-500 text-sm">إلغاء</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
