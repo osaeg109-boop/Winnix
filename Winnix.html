@@ -13,6 +13,8 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(1080deg); } }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .loading-dots:after { content: ' .'; animation: dots 1.5s steps(5, end) infinite; }
+        @keyframes dots { 0%, 20% { content: ' .'; } 40% { content: ' ..'; } 60% { content: ' ...'; } 80%, 100% { content: ''; } }
     </style>
 </head>
 <body class="pb-20">
@@ -22,25 +24,32 @@
         <div id="loading" class="fixed inset-0 z-[200] bg-[#0f172a] flex flex-col items-center justify-center">
             <div class="w-16 h-16 border-4 border-[#a3ff00] border-t-transparent rounded-full animate-spin mb-4"></div>
             <h1 class="text-2xl font-black">WIN<span class="text-[#a3ff00]">NIX</span></h1>
+            <p class="text-slate-500 text-sm mt-2 loading-dots">جاري جلب البيانات</p>
         </div>
 
-        <!-- Auth Screen (Hidden by default) -->
+        <!-- Auth Screen -->
         <div id="auth-screen" class="hidden min-h-screen flex items-center justify-center p-4">
-            <div class="bg-[#1e293b] w-full max-w-md rounded-3xl p-8 border border-slate-700">
-                <h1 class="text-4xl font-black text-center mb-8">WIN<span class="text-[#a3ff00]">NIX</span></h1>
+            <div class="bg-[#1e293b] w-full max-w-md rounded-3xl p-8 border border-slate-700 shadow-2xl">
+                <h1 class="text-4xl font-black text-center mb-2">WIN<span class="text-[#a3ff00]">NIX</span></h1>
+                <p class="text-center text-slate-400 text-sm mb-8">سجل دخولك لبدء الربح</p>
                 <div class="space-y-4">
-                    <input id="auth-email" type="email" placeholder="البريد الإلكتروني" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 outline-none focus:border-[#a3ff00]">
-                    <input id="auth-password" type="password" placeholder="كلمة المرور" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 outline-none focus:border-[#a3ff00]">
-                    <div id="auth-error" class="text-red-500 text-xs text-center hidden"></div>
-                    <button id="btn-login" class="w-full bg-[#a3ff00] text-black font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all">دخول</button>
-                    <button id="btn-signup" class="w-full text-slate-400 text-sm mt-2">إنشاء حساب جديد</button>
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-500 mr-2">البريد الإلكتروني</label>
+                        <input id="auth-email" type="email" placeholder="example@mail.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 outline-none focus:border-[#a3ff00] transition-colors">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-500 mr-2">كلمة المرور</label>
+                        <input id="auth-password" type="password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 outline-none focus:border-[#a3ff00] transition-colors">
+                    </div>
+                    <div id="auth-error" class="text-red-400 text-xs text-center hidden bg-red-400/10 p-2 rounded-lg"></div>
+                    <button id="btn-auth-action" class="w-full bg-[#a3ff00] text-black font-black py-4 rounded-xl shadow-[0_4px_20px_rgba(163,255,0,0.2)] active:scale-95 transition-all">دخول / تسجيل</button>
+                    <p class="text-[10px] text-slate-500 text-center">بمجرد الضغط سيتم فحص الحساب أو إنشاؤه تلقائياً</p>
                 </div>
             </div>
         </div>
 
-        <!-- Main Content (Hidden by default) -->
+        <!-- Main Content -->
         <div id="main-content" class="hidden">
-            <!-- Header -->
             <header class="sticky top-0 z-50 bg-[#162032]/80 backdrop-blur-md border-b border-slate-800 p-4 flex justify-between items-center">
                 <div class="font-black text-2xl">WIN<span class="text-[#a3ff00]">NIX</span></div>
                 <div class="flex items-center gap-3">
@@ -53,42 +62,41 @@
             </header>
 
             <main class="p-4 max-w-4xl mx-auto space-y-6">
-                <!-- Daily Reward Card -->
-                <div class="bg-[#1e293b] p-6 rounded-3xl border border-slate-700 text-center relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="gift" size="80"></i></div>
+                <!-- Daily Reward -->
+                <div class="bg-gradient-to-br from-[#1e293b] to-[#0f172a] p-6 rounded-3xl border border-slate-700 text-center relative overflow-hidden">
+                    <div class="absolute -top-4 -right-4 p-4 opacity-5"><i data-lucide="gift" size="120"></i></div>
                     <h2 class="text-xl font-black mb-4 flex items-center justify-center gap-2 text-[#a3ff00]">
                         <i data-lucide="zap"></i> المكافأة اليومية
                     </h2>
-                    <div id="wheel-container" class="w-40 h-40 mx-auto rounded-full border-4 border-slate-800 flex items-center justify-center bg-slate-900 mb-6 transition-all duration-500">
+                    <div id="wheel-container" class="w-36 h-36 mx-auto rounded-full border-4 border-slate-800 flex items-center justify-center bg-slate-900 mb-6 shadow-inner transition-all">
                         <span id="wheel-icon" class="text-5xl">🎁</span>
                     </div>
-                    <div id="reward-status" class="text-slate-400 text-sm mb-4">اربح ميزات خاصة ومبالغ نقدية كل 24 ساعة!</div>
-                    <button id="btn-spin" class="w-full bg-[#a3ff00] text-black font-black py-3 rounded-xl shadow-lg disabled:opacity-50">اسحب هديتك الآن</button>
+                    <div id="reward-status" class="text-slate-400 text-sm mb-4">اربح مبالغ نقدية كل 24 ساعة!</div>
+                    <button id="btn-spin" class="w-full bg-[#a3ff00] text-black font-black py-3 rounded-xl shadow-lg disabled:opacity-30 disabled:grayscale transition-all">اسحب هديتك الآن</button>
                 </div>
 
-                <!-- Action Buttons -->
+                <!-- Actions -->
                 <div class="grid grid-cols-2 gap-4">
-                    <button onclick="showModal('deposit')" class="py-4 bg-blue-600 rounded-2xl font-black flex items-center justify-center gap-2"><i data-lucide="wallet"></i> إيداع</button>
-                    <button onclick="showModal('withdraw')" class="py-4 bg-emerald-600 rounded-2xl font-black flex items-center justify-center gap-2"><i data-lucide="arrow-down-circle"></i> سحب</button>
+                    <button onclick="showModal('deposit')" class="py-4 bg-blue-600 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-500 active:scale-95 transition-all"><i data-lucide="wallet"></i> إيداع</button>
+                    <button onclick="showModal('withdraw')" class="py-4 bg-emerald-600 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-emerald-500 active:scale-95 transition-all"><i data-lucide="arrow-down-circle"></i> سحب</button>
                 </div>
 
                 <!-- Game Grid -->
-                <h2 class="text-xl font-black mt-8">الألعاب المتاحة</h2>
+                <h2 class="text-xl font-black mt-8">الألعاب</h2>
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 relative overflow-hidden group active:scale-95 transition-all">
-                        <div class="bg-red-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-red-500 mb-4"><i data-lucide="rocket"></i></div>
-                        <div class="font-black text-lg">Aviator X</div>
-                        <div class="text-[10px] text-slate-500 mt-1">اضرب رهانك في 100</div>
+                    <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 active:scale-95 transition-all">
+                        <div class="bg-red-500/20 w-10 h-10 rounded-xl flex items-center justify-center text-red-500 mb-4"><i data-lucide="rocket"></i></div>
+                        <div class="font-black">Aviator X</div>
+                        <div class="text-[10px] text-slate-500">قريباً..</div>
                     </div>
-                    <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 relative overflow-hidden group active:scale-95 transition-all">
-                        <div class="bg-blue-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-blue-500 mb-4"><i data-lucide="bomb"></i></div>
-                        <div class="font-black text-lg">Mines Pro</div>
-                        <div class="text-[10px] text-slate-500 mt-1">تجنب القنابل لتربح</div>
+                    <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 active:scale-95 transition-all">
+                        <div class="bg-blue-500/20 w-10 h-10 rounded-xl flex items-center justify-center text-blue-500 mb-4"><i data-lucide="bomb"></i></div>
+                        <div class="font-black">Mines Pro</div>
+                        <div class="text-[10px] text-slate-500">قريباً..</div>
                     </div>
                 </div>
             </main>
 
-            <!-- Footer Navigation -->
             <footer class="fixed bottom-0 inset-x-0 bg-[#162032]/95 backdrop-blur-xl border-t border-slate-800 flex justify-around p-3">
                 <button class="text-[#a3ff00] flex flex-col items-center"><i data-lucide="gamepad-2"></i><span class="text-[10px]">الرئيسية</span></button>
                 <button onclick="showModal('deposit')" class="text-slate-400 flex flex-col items-center"><i data-lucide="plus-circle"></i><span class="text-[10px]">شحن</span></button>
@@ -97,62 +105,61 @@
             </footer>
         </div>
 
-        <!-- Modals Container -->
-        <div id="modal-overlay" class="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 hidden">
-            <!-- Deposit Modal -->
+        <!-- Modals -->
+        <div id="modal-overlay" class="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 hidden">
+            <!-- Deposit -->
             <div id="modal-deposit" class="modal-content bg-[#1e293b] w-full max-w-md rounded-3xl p-8 border border-slate-700 relative hidden">
                 <button onclick="hideModal()" class="absolute left-6 top-6 text-slate-500"><i data-lucide="x"></i></button>
                 <h2 class="text-2xl font-black mb-6">شحن الرصيد</h2>
-                <div class="bg-blue-600/10 border border-blue-500/30 p-4 rounded-xl mb-6">
-                    <p class="text-xs text-blue-400 mb-1">حول المبلغ إلى رقم فودافون كاش:</p>
-                    <div class="flex justify-between items-center">
-                        <span class="font-mono text-xl font-bold tracking-widest text-white">01014879247</span>
-                        <button onclick="copyNumber()" class="bg-blue-600 p-2 rounded-lg text-white"><i data-lucide="copy" size="16"></i></button>
+                <div class="bg-blue-600/10 border border-blue-500/30 p-4 rounded-xl mb-6 flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] text-blue-400">حول إلى فودافون كاش:</p>
+                        <span class="font-mono text-xl font-bold text-white">01014879247</span>
                     </div>
+                    <button onclick="copyNumber()" class="bg-blue-600 p-2 rounded-lg text-white"><i data-lucide="copy" size="16"></i></button>
                 </div>
                 <div class="space-y-4">
-                    <input id="dep-phone" type="text" placeholder="الرقم الذي حولت منه" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-800 outline-none">
-                    <input id="dep-amount" type="number" placeholder="المبلغ" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-800 outline-none">
-                    <button onclick="submitDeposit()" class="w-full bg-[#a3ff00] text-black font-black py-4 rounded-xl">إرسال للتفعيل (واتساب)</button>
+                    <input id="dep-phone" type="text" placeholder="رقمك المحول منه" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-800 outline-none">
+                    <input id="dep-amount" type="number" placeholder="المبلغ المراد شحنه" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-800 outline-none">
+                    <button id="btn-confirm-dep" class="w-full bg-[#a3ff00] text-black font-black py-4 rounded-xl">إرسال للتفعيل</button>
                 </div>
             </div>
 
-            <!-- Withdraw Modal -->
+            <!-- Withdraw -->
             <div id="modal-withdraw" class="modal-content bg-[#1e293b] w-full max-w-md rounded-3xl p-8 border border-slate-700 relative hidden">
                 <button onclick="hideModal()" class="absolute left-6 top-6 text-slate-500"><i data-lucide="x"></i></button>
                 <h2 class="text-2xl font-black mb-6 text-emerald-500">سحب الأرباح</h2>
                 <div class="space-y-4">
-                    <input id="wd-phone" type="text" placeholder="رقم المحفظة لاستلام الكاش" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-800 outline-none">
+                    <input id="wd-phone" type="text" placeholder="رقم محفظة الاستلام" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-800 outline-none">
                     <input id="wd-amount" type="number" placeholder="المبلغ (الأدنى 50)" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-800 outline-none">
-                    <div id="wd-error" class="text-red-500 text-xs text-center hidden"></div>
-                    <button onclick="submitWithdraw()" class="w-full bg-emerald-600 text-white font-black py-4 rounded-xl">تأكيد طلب السحب</button>
+                    <div id="wd-error" class="text-red-400 text-xs text-center hidden"></div>
+                    <button id="btn-confirm-wd" class="w-full bg-emerald-600 text-white font-black py-4 rounded-xl">تأكيد طلب السحب</button>
                 </div>
             </div>
 
-            <!-- Profile Modal -->
+            <!-- Profile -->
             <div id="modal-profile" class="modal-content bg-[#1e293b] w-full max-w-md rounded-3xl p-8 border border-slate-700 relative hidden">
                 <button onclick="hideModal()" class="absolute left-6 top-6 text-slate-500"><i data-lucide="x"></i></button>
                 <div class="text-center pt-4">
-                    <div class="w-20 h-20 bg-slate-800 rounded-full mx-auto mb-4 flex items-center justify-center border-2 border-[#a3ff00]"><i data-lucide="user" size="40" class="text-[#a3ff00]"></i></div>
-                    <h2 id="prof-email" class="font-bold mb-1">---</h2>
-                    <p id="prof-id" class="text-slate-500 text-sm mb-6">ID: WIN-000000</p>
-                    <div class="bg-slate-900 p-6 rounded-2xl mb-6">
-                        <p class="text-slate-500 text-xs mb-1">رصيدك الكلي</p>
-                        <p id="prof-balance" class="text-[#a3ff00] text-4xl font-black">0.00</p>
+                    <div class="w-16 h-16 bg-slate-800 rounded-full mx-auto mb-4 flex items-center justify-center border border-[#a3ff00]"><i data-lucide="user" class="text-[#a3ff00]"></i></div>
+                    <h2 id="prof-email" class="font-bold text-sm">---</h2>
+                    <p id="prof-id" class="text-slate-500 text-[10px] mb-6">ID: WIN-000000</p>
+                    <div class="bg-slate-900 p-4 rounded-2xl mb-6">
+                        <p class="text-slate-500 text-[10px] mb-1">الرصيد المتاح</p>
+                        <p id="prof-balance" class="text-[#a3ff00] text-2xl font-black">0.00 EGP</p>
                     </div>
-                    <button id="btn-logout" class="w-full bg-red-500/10 text-red-500 border border-red-500/20 py-3 rounded-xl flex items-center justify-center gap-2"><i data-lucide="log-out"></i> تسجيل الخروج</button>
+                    <button id="btn-logout" class="w-full bg-red-500/10 text-red-500 border border-red-500/20 py-3 rounded-xl">تسجيل الخروج</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase Integration -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDhHkYb1tFSSbxaQejvYl2vrI5fN1MVpcs",
             authDomain: "chatu-e5f5f.firebaseapp.com",
@@ -165,136 +172,96 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = 'winnix-v1-production';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'winnix-master-app';
 
         let currentUser = null;
         let userData = null;
 
-        // UI Initialization
         lucide.createIcons();
 
-        // App States
-        const updateUI = () => {
-            if (currentUser) {
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('main-content').classList.remove('hidden');
-                document.getElementById('loading').classList.add('hidden');
-            } else {
-                document.getElementById('auth-screen').classList.remove('hidden');
-                document.getElementById('main-content').classList.add('hidden');
-                document.getElementById('loading').classList.add('hidden');
-            }
-        };
-
-        // Auth Logic
-        document.getElementById('btn-login').onclick = async () => {
+        // 1. Auth Flow: Single Button Login/Signup
+        document.getElementById('btn-auth-action').onclick = async () => {
             const email = document.getElementById('auth-email').value;
             const pass = document.getElementById('auth-password').value;
             const errDiv = document.getElementById('auth-error');
+            
+            if(!email || !pass) {
+                errDiv.innerText = "يرجى ملء كافة الحقول";
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            errDiv.classList.add('hidden');
             try {
+                // Try login
                 await signInWithEmailAndPassword(auth, email, pass);
             } catch (e) {
+                // If fails, try signup
                 try {
                     const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+                    // Create Profile
                     await setDoc(doc(db, 'artifacts', appId, 'users', userCred.user.uid, 'profile'), {
                         balance: 0,
                         email: email,
                         userId: `WIN-${Math.floor(100000 + Math.random() * 900000)}`,
-                        createdAt: Date.now()
+                        registeredAt: Date.now()
                     });
-                } catch (err) {
-                    errDiv.innerText = "بيانات الدخول غير صحيحة";
+                } catch (signupErr) {
+                    errDiv.innerText = "حدث خطأ: " + signupErr.message.split('/')[1]?.replace(')', '') || "فشلت المحاولة";
                     errDiv.classList.remove('hidden');
                 }
             }
         };
 
-        document.getElementById('btn-logout').onclick = () => signOut(auth);
-
-        // Auth State Listener
-        onAuthStateChanged(auth, (user) => {
+        // 2. Auth State Observer (REVISED)
+        onAuthStateChanged(auth, async (user) => {
             currentUser = user;
-            if (user) {
-                onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile'), (snap) => {
+            if (user && !user.isAnonymous) {
+                // Authenticated User
+                const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile');
+                onSnapshot(profileRef, (snap) => {
                     if (snap.exists()) {
                         userData = snap.data();
-                        document.getElementById('display-balance').innerText = userData.balance.toFixed(2);
-                        document.getElementById('prof-balance').innerText = userData.balance.toFixed(2);
-                        document.getElementById('prof-email').innerText = userData.email;
-                        document.getElementById('prof-id').innerText = `ID: ${userData.userId}`;
+                        renderData();
                     }
-                });
-                checkDailySpin();
+                }, (err) => console.error("Firestore Error:", err));
+                
+                checkDailyReward();
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+            } else {
+                // Show Auth Screen
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('main-content').classList.add('hidden');
             }
-            updateUI();
+            document.getElementById('loading').classList.add('hidden');
         });
 
-        // Global Modals Helper
-        window.showModal = (type) => {
-            document.getElementById('modal-overlay').classList.remove('hidden');
-            document.querySelectorAll('.modal-content').forEach(m => m.classList.add('hidden'));
-            document.getElementById(`modal-${type}`).classList.remove('hidden');
-        };
+        function renderData() {
+            if(!userData) return;
+            document.getElementById('display-balance').innerText = userData.balance.toFixed(2);
+            document.getElementById('prof-balance').innerText = userData.balance.toFixed(2) + " EGP";
+            document.getElementById('prof-email').innerText = userData.email;
+            document.getElementById('prof-id').innerText = `ID: ${userData.userId}`;
+        }
 
-        window.hideModal = () => {
-            document.getElementById('modal-overlay').classList.add('hidden');
-        };
-
-        window.copyNumber = () => {
-            const num = "01014879247";
-            const el = document.createElement('textarea');
-            el.value = num;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            alert("تم نسخ الرقم بنجاح");
-        };
-
-        // Transaction Logic
-        window.submitDeposit = () => {
-            const phone = document.getElementById('dep-phone').value;
-            const amount = document.getElementById('dep-amount').value;
-            if(!phone || !amount) return;
-            const msg = `طلب إيداع جديد:%0Aالمستخدم: ${userData.userId}%0Aرقم المحول: ${phone}%0Aالمبلغ: ${amount} EGP`;
-            window.open(`https://wa.me/201012265953?text=${msg}`, '_blank');
-            hideModal();
-        };
-
-        window.submitWithdraw = async () => {
-            const phone = document.getElementById('wd-phone').value;
-            const amount = parseFloat(document.getElementById('wd-amount').value);
-            const errDiv = document.getElementById('wd-error');
-            
-            if(!phone || isNaN(amount) || amount < 50) {
-                errDiv.innerText = "أقل مبلغ سحب 50 جنيه";
-                errDiv.classList.remove('hidden');
-                return;
-            }
-            if(userData.balance < amount) {
-                errDiv.innerText = "رصيدك غير كافٍ";
-                errDiv.classList.remove('hidden');
-                return;
-            }
-
-            await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile'), {
-                balance: userData.balance - amount
-            });
-            const msg = `طلب سحب أرباح:%0Aالمستخدم: ${userData.userId}%0Aرقم الاستلام: ${phone}%0Aالمبلغ: ${amount} EGP`;
-            window.open(`https://wa.me/201012265953?text=${msg}`, '_blank');
-            hideModal();
-        };
-
-        // Daily Reward Logic
-        async function checkDailySpin() {
-            const spinDoc = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'rewards', 'daily'));
-            if (spinDoc.exists()) {
-                const last = spinDoc.data().timestamp;
+        // 3. Daily Reward Logic
+        async function checkDailyReward() {
+            if(!currentUser) return;
+            const rewardRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'rewards', 'daily');
+            const snap = await getDoc(rewardRef);
+            if (snap.exists()) {
+                const last = snap.data().timestamp;
                 if (Date.now() - last < 86400000) {
-                    document.getElementById('btn-spin').disabled = true;
-                    document.getElementById('btn-spin').innerText = "عد لاحقاً غداً";
+                    disableSpin();
                 }
             }
+        }
+
+        function disableSpin() {
+            const btn = document.getElementById('btn-spin');
+            btn.disabled = true;
+            btn.innerText = "تم استلام هدية اليوم";
         }
 
         document.getElementById('btn-spin').onclick = async () => {
@@ -303,23 +270,80 @@
             const icon = document.getElementById('wheel-icon');
             
             btn.disabled = true;
-            btn.innerText = "جاري السحب...";
             wheel.classList.add('spin-animation');
 
             setTimeout(async () => {
                 wheel.classList.remove('spin-animation');
-                const winAmount = (Math.random() * 5).toFixed(2); // Random small reward
-                icon.innerText = "💰";
-                document.getElementById('reward-status').innerHTML = `<span class="text-[#a3ff00] font-bold">ربحت ${winAmount} EGP رصيد مجاني!</span>`;
+                const reward = parseFloat((Math.random() * 3 + 1).toFixed(2));
+                icon.innerText = "💸";
+                document.getElementById('reward-status').innerHTML = `<span class="text-[#a3ff00] font-bold">ربحت ${reward} EGP مكافأة!</span>`;
                 
                 await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile'), {
-                    balance: userData.balance + parseFloat(winAmount)
+                    balance: userData.balance + reward
                 });
                 await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'rewards', 'daily'), {
                     timestamp: Date.now()
                 });
+                disableSpin();
             }, 3000);
         };
+
+        // 4. Modals & UI Actions
+        window.showModal = (id) => {
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            document.querySelectorAll('.modal-content').forEach(m => m.classList.add('hidden'));
+            document.getElementById('modal-' + id).classList.remove('hidden');
+        };
+
+        window.hideModal = () => {
+            document.getElementById('modal-overlay').classList.add('hidden');
+        };
+
+        window.copyNumber = () => {
+            navigator.clipboard.writeText("01014879247");
+            const btn = document.querySelector('#modal-deposit button i');
+            btn.setAttribute('data-lucide', 'check');
+            lucide.createIcons();
+            setTimeout(() => {
+                btn.setAttribute('data-lucide', 'copy');
+                lucide.createIcons();
+            }, 2000);
+        };
+
+        document.getElementById('btn-confirm-dep').onclick = () => {
+            const ph = document.getElementById('dep-phone').value;
+            const am = document.getElementById('dep-amount').value;
+            if(!ph || !am) return;
+            const msg = `إيداع جديد من: ${userData.userId}%0Aالرقم: ${ph}%0Aالمبلغ: ${am}`;
+            window.open(`https://wa.me/201012265953?text=${msg}`);
+            hideModal();
+        };
+
+        document.getElementById('btn-confirm-wd').onclick = async () => {
+            const ph = document.getElementById('wd-phone').value;
+            const am = parseFloat(document.getElementById('wd-amount').value);
+            const err = document.getElementById('wd-error');
+            
+            if(!ph || isNaN(am) || am < 50) {
+                err.innerText = "الحد الأدنى للسحب 50 جنيه";
+                err.classList.remove('hidden');
+                return;
+            }
+            if(userData.balance < am) {
+                err.innerText = "الرصيد غير كافٍ";
+                err.classList.remove('hidden');
+                return;
+            }
+
+            await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile'), {
+                balance: userData.balance - am
+            });
+            const msg = `سحب أرباح للمستخدم: ${userData.userId}%0Aالرقم: ${ph}%0Aالمبلغ: ${am}`;
+            window.open(`https://wa.me/201012265953?text=${msg}`);
+            hideModal();
+        };
+
+        document.getElementById('btn-logout').onclick = () => signOut(auth);
 
     </script>
 </body>
