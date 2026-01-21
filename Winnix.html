@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Winnix EG - الإصدار المحدث</title>
+    <title>Winnix EG - الإصدار المعدل</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
@@ -90,7 +90,7 @@
         
         let state = {
             username: null,
-            balance: 0.0, // تم التعديل إلى 0
+            balance: 0.0,
             lastSpin: 0
         };
 
@@ -209,7 +209,6 @@
             state.balance -= bet;
             appleGame = { active: true, step: 0, bet: bet, grid: [] };
             for(let i=0; i<10; i++) {
-                // Hard Mode: Only 2 apples in 5 slots
                 let row = [1, 1, 0, 0, 0].sort(() => Math.random() - 0.5);
                 appleGame.grid.push(row);
             }
@@ -249,7 +248,7 @@
             router('apples');
         }
 
-        // --- PENALTY GAME (NEW) ---
+        // --- PENALTY GAME (UPDATED 1.23x logic) ---
         let penaltyGame = { active: false, bet: 0, score: 0 };
         function startPenalty(bet) {
             if (bet < MIN_BET) return showToast(`أقل رهان ${MIN_BET} جنيه`);
@@ -262,7 +261,11 @@
 
         function shoot(target) {
             if(!penaltyGame.active) return;
-            const isGoal = Math.random() > 0.4; // 60% chance to score
+            
+            // تعديل الصعوبة: فرصة التسجيل أصبحت 25% فقط (كانت 60%)
+            // هذا يعني أن اللاعب سيخسر في معظم المحاولات كما طلبت
+            const isGoal = Math.random() > 0.75; 
+            
             const goaliePos = Math.floor(Math.random() * 5);
             
             if(isGoal) {
@@ -278,8 +281,11 @@
 
         function cashoutPenalty() {
             if(!penaltyGame.active || penaltyGame.score === 0) return;
-            const mults = [0, 1.9, 3.8, 7.5, 15, 30];
-            const win = penaltyGame.bet * mults[Math.min(penaltyGame.score, 5)];
+            
+            // تعديل المضاعف: ضرب المبلغ في 1.23 لكل هدف
+            // المعادلة: الرهان * (1.23 ^ عدد الأهداف)
+            const win = penaltyGame.bet * Math.pow(1.23, penaltyGame.score);
+            
             state.balance += win;
             penaltyGame.active = false;
             saveData();
@@ -508,7 +514,9 @@
                     </div>
                 `;
             } else {
-                const mults = [0, 1.9, 3.8, 7.5, 15, 30];
+                // حساب الربح المتوقع لعرضه في الواجهة بناءً على 1.23
+                const potentialWin = penaltyGame.bet * Math.pow(1.23, penaltyGame.score);
+                
                 main.innerHTML = `
                     <div class="flex justify-between items-center mb-6 bg-slate-900 p-4 rounded-2xl border border-slate-800">
                          <div>
@@ -517,7 +525,7 @@
                          </div>
                          <div class="text-right">
                             <p class="text-[10px] text-slate-500 italic">الربح الحالي</p>
-                            <p class="font-black text-yellow-500">${(penaltyGame.bet * mults[penaltyGame.score]).toFixed(2)} EGP</p>
+                            <p class="font-black text-yellow-500">${potentialWin.toFixed(2)} EGP</p>
                          </div>
                     </div>
                     
@@ -673,3 +681,4 @@
     </script>
 </body>
 </html>
+
