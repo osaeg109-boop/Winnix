@@ -3,510 +3,673 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Winnix  | الإصدار النهائي المستقر</title>
+    <title>Winnix EG - الإصدار المحدث</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #3b82f6; --accent: #f59e0b; --bg: #0f172a; }
-        body { font-family: 'Cairo', sans-serif; background-color: var(--bg); color: white; user-select: none; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
-        
-        .glass { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
-        .active-row { background: rgba(59, 130, 246, 0.2); border: 1px solid var(--primary); transform: scale(1.02); }
-        
-        @keyframes rocket-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .rocket-anim { animation: rocket-float 2s infinite ease-in-out; }
-
-        .goal-container { height: 200px; border: 4px solid white; border-bottom: none; position: relative; background: linear-gradient(to bottom, #1e3a8a, #0f172a); }
-        .ball { width: 25px; height: 25px; background: white; border-radius: 50%; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-
-        .dice-spin { animation: spin 0.5s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        
-        .slot-reel { height: 100px; overflow: hidden; background: #000; border-radius: 10px; border: 1px solid #334155; position: relative; }
-        .slot-item { height: 100px; display: flex; items-center; justify-content: center; font-size: 2.5rem; transition: transform 0.1s; }
+        body { font-family: 'Cairo', sans-serif; background-color: #0b0f1a; color: white; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        .crash-canvas-container { position: relative; height: 300px; background: radial-gradient(circle at bottom left, #1e293b, #0b0f1a); border-radius: 20px; overflow: hidden; border: 1px solid #334155; }
+        .rocket { position: absolute; bottom: 10%; left: 10%; font-size: 45px; z-index: 10; filter: drop-shadow(0 0 15px #3b82f6); transition: transform 0.1s linear; }
+        .rocket-fire { position: absolute; top: 90%; left: 50%; transform: translateX(-50%); width: 10px; height: 25px; background: linear-gradient(to bottom, #f59e0b, #ef4444, transparent); border-radius: 5px; animation: flicker 0.1s infinite; }
+        @keyframes flicker { 0%, 100% { opacity: 0.8; height: 15px; } 50% { opacity: 1; height: 30px; } }
+        .game-card { background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid #334155; transition: 0.3s; cursor: pointer; position: relative; overflow: hidden; }
+        .game-card:hover { border-color: #3b82f6; transform: translateY(-3px); }
+        .apple-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: #1e293b; border-radius: 12px; transition: 0.2s; font-size: 24px; cursor: pointer; border: 1px solid #334155; }
+        .apple-cell.win { background: #059669; border-color: #10b981; }
+        .apple-cell.lose { background: #991b1b; border-color: #ef4444; }
+        .penalty-target { width: 60px; height: 60px; border-radius: 50%; border: 4px dashed rgba(255,255,255,0.3); transition: 0.2s; cursor: pointer; }
+        .penalty-target:hover { background: rgba(59, 130, 246, 0.4); border-color: #3b82f6; }
+        #wheel { transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1); }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
-<body class="pb-24">
+<body class="pb-28">
 
-    <!-- Auth Layer -->
-    <div id="authScreen" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-8">
-        <div class="mb-10 text-center">
-            <h1 class="text-6xl font-black text-blue-500 italic tracking-tighter">WINNIX </h1>
-            <p class="text-slate-500 font-bold mt-2">ابدأ الان الرحلة في الفوز ابني</p>
-        </div>
-        <div class="w-full max-w-sm space-y-4">
-            <input type="text" id="usernameInput" class="w-full bg-slate-900 border border-slate-800 p-5 rounded-2xl text-white font-bold text-center outline-none focus:border-blue-500" placeholder="ادخل اسمك">
-            <button onclick="core.login()" class="w-full bg-blue-600 hover:bg-blue-700 py-5 rounded-2xl font-black text-xl shadow-2xl transition-all">دخول المنصة</button>
-        </div>
+    <!-- Auth -->
+    <div id="authScreen" class="fixed inset-0 z-[100] bg-[#0b0f1a] flex flex-col items-center justify-center p-6 hidden">
+        <h1 class="text-6xl font-black italic text-blue-500 mb-2 tracking-tighter">WINNIX EG</h1>
+        <p class="text-slate-400 mb-10">نظام المراهنات المتكامل</p>
+        <input type="text" id="usernameInput" class="w-full max-w-xs bg-slate-800 border border-slate-700 rounded-2xl p-5 text-white font-bold mb-4 outline-none focus:border-blue-500" placeholder="ادخل اسمك الثنائي">
+        <button onclick="handleLogin()" class="w-full max-w-xs bg-blue-600 py-5 rounded-2xl font-black text-xl shadow-xl shadow-blue-900/40">ابدأ الآن</button>
     </div>
 
     <!-- Header -->
-    <header class="fixed top-0 left-0 right-0 glass z-50 px-4 py-3 flex justify-between items-center hidden" id="mainHeader">
-        <div class="flex items-center gap-3">
-            <div id="avatar" class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-black">?</div>
-            <div>
-                <p id="uiUser" class="text-xs font-black uppercase">USER</p>
-                <p class="text-[9px] text-green-500 font-bold">متصل الآن</p>
+    <header class="fixed top-0 left-0 right-0 bg-[#0b0f1a]/95 backdrop-blur-md border-b border-slate-800 z-50">
+        <div class="flex justify-between items-center p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-700 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg" id="avatarLetter">W</div>
+                <div class="flex flex-col">
+                    <span id="headerUsername" class="text-sm font-bold">...</span>
+                    <span class="text-[10px] text-green-500 font-bold">متصل</span>
+                </div>
             </div>
-        </div>
-        <div class="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
-            <div class="px-3 py-1">
-                <span id="uiBalance" class="text-blue-400 font-black text-lg">0.00</span>
-                <span class="text-[8px] text-slate-500 mr-1">EGP</span>
+            <div class="flex items-center gap-2">
+                <div class="bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 text-left">
+                    <div class="flex items-center gap-1">
+                        <span id="userBalance" class="text-blue-400 font-black text-lg">0.00</span>
+                        <span class="text-[10px] text-slate-500 font-bold">EGP</span>
+                    </div>
+                </div>
+                <button onclick="openModal('deposit')" class="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center"><i class="fa-solid fa-plus"></i></button>
             </div>
-            <button onclick="core.openModal('deposit')" class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center"><i class="fa-solid fa-plus text-xs"></i></button>
         </div>
     </header>
 
-    <!-- Main View -->
-    <main id="appView" class="pt-20 px-4 hidden"></main>
+    <main id="mainContent" class="pt-24 px-4 min-h-screen"></main>
 
-    <!-- Nav -->
-    <nav class="fixed bottom-0 left-0 right-0 glass z-50 py-3 flex justify-around border-t border-white/5 hidden" id="mainNav">
-        <button onclick="core.route('home')" class="flex flex-col items-center opacity-60 hover:opacity-100 transition"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] mt-1 font-bold">الرئيسية</span></button>
-        <button onclick="core.route('crash')" class="flex flex-col items-center opacity-60 hover:opacity-100 transition"><i class="fa-solid fa-rocket text-xl text-blue-500"></i><span class="text-[10px] mt-1 font-bold">كراش</span></button>
-        <button onclick="core.route('casino')" class="flex flex-col items-center opacity-60 hover:opacity-100 transition"><i class="fa-solid fa-gem text-xl text-purple-500"></i><span class="text-[10px] mt-1 font-bold">كازينو</span></button>
-        <button onclick="core.route('profile')" class="flex flex-col items-center opacity-60 hover:opacity-100 transition"><i class="fa-solid fa-wallet text-xl"></i><span class="text-[10px] mt-1 font-bold">محفظتي</span></button>
+    <!-- Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#0b0f1a]/90 backdrop-blur-xl border-t border-slate-800 flex justify-around items-center p-4 z-50">
+        <button onclick="router('home')" class="nav-btn flex flex-col items-center text-blue-500" data-page="home"><i class="fa-solid fa-house-chimney text-xl"></i><span class="text-[10px] mt-1 font-bold">الرئيسية</span></button>
+        <button onclick="router('crash')" class="nav-btn flex flex-col items-center text-slate-500" data-page="crash"><i class="fa-solid fa-rocket text-xl"></i><span class="text-[10px] mt-1 font-bold">CRASH</span></button>
+        <button onclick="router('rewards')" class="nav-btn flex flex-col items-center text-slate-500" data-page="rewards"><i class="fa-solid fa-dharmachakra text-xl"></i><span class="text-[10px] mt-1 font-bold">عروض</span></button>
+        <button onclick="router('profile')" class="nav-btn flex flex-col items-center text-slate-500" data-page="profile"><i class="fa-solid fa-user-gear text-xl"></i><span class="text-[10px] mt-1 font-bold">حسابي</span></button>
     </nav>
 
-    <!-- Modal System -->
-    <div id="modalOverlay" class="fixed inset-0 z-[110] bg-black/95 hidden items-center justify-center p-6 backdrop-blur-md">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 relative">
-            <h3 id="modalTitle" class="text-xl font-black mb-6 text-center italic"></h3>
-            <div id="modalContent"></div>
-            <button onclick="core.closeModal()" class="w-full mt-6 text-slate-500 text-sm font-bold">إغاء</button>
+    <!-- Modals -->
+    <div id="modal" class="fixed inset-0 bg-black/95 z-[100] hidden flex items-center justify-center p-6">
+        <div class="bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-800 p-8">
+            <h3 id="modalTitle" class="text-2xl font-black mb-6"></h3>
+            <div id="modalBody"></div>
+            <button onclick="closeModal()" class="w-full mt-6 text-slate-500 font-bold">رجوع</button>
         </div>
     </div>
 
     <!-- Toast -->
-    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 z-[120] bg-slate-800 px-6 py-3 rounded-2xl shadow-2xl opacity-0 transition-all pointer-events-none flex items-center gap-3">
+    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-900 border border-blue-500 px-6 py-3 rounded-full shadow-2xl z-[110] transition-all duration-300 opacity-0 pointer-events-none flex items-center gap-3">
+        <i id="toastIcon" class="fa-solid fa-circle-info"></i>
         <span id="toastMsg" class="font-bold text-sm"></span>
     </div>
 
     <script>
-        // --- CORE ---
-        const core = {
-            state: { user: null, balance: 100.00, history: [] },
-            config: { adminPin: "208090" },
-
-            init() {
-                const data = localStorage.getItem('winnix_pro_v3');
-                if(data) this.state = JSON.parse(data);
-                if(this.state.user) this.showApp();
-                this.startCrashSystem();
-            },
-
-            save() {
-                localStorage.setItem('winnix_pro_v3', JSON.stringify(this.state));
-                this.updateUI();
-            },
-
-            login() {
-                const name = document.getElementById('usernameInput').value.trim();
-                if(name.length < 2) return this.notify("الاسم قصير جداً", "error");
-                this.state.user = name;
-                this.save();
-                this.showApp();
-                this.route('home');
-            },
-
-            showApp() {
-                document.getElementById('authScreen').classList.add('hidden');
-                document.getElementById('mainHeader').classList.remove('hidden');
-                document.getElementById('mainNav').classList.remove('hidden');
-                document.getElementById('appView').classList.remove('hidden');
-                this.updateUI();
-                this.route('home');
-            },
-
-            updateUI() {
-                document.getElementById('uiUser').innerText = this.state.user;
-                document.getElementById('uiBalance').innerText = this.state.balance.toFixed(2);
-                document.getElementById('avatar').innerText = this.state.user[0].toUpperCase();
-            },
-
-            route(page) {
-                const view = document.getElementById('appView');
-                view.innerHTML = '';
-                if(page === 'home') this.renderHome(view);
-                else if(page === 'crash') games.crash.render(view);
-                else if(page === 'apples') games.apples.render(view);
-                else if(page === 'penalty') games.penalty.render(view);
-                else if(page === 'casino') this.renderCasino(view);
-                else if(page === 'profile') this.renderProfile(view);
-                else if(page === 'dice') games.dice.render(view);
-            },
-
-            notify(msg, type = 'success') {
-                const t = document.getElementById('toast');
-                const m = document.getElementById('toastMsg');
-                m.innerText = msg;
-                t.style.borderLeft = `4px solid ${type === 'error' ? '#ef4444' : '#22c55e'}`;
-                t.classList.remove('opacity-0', 'translate-y-[-20px]');
-                t.classList.add('opacity-100', 'translate-y-0');
-                setTimeout(() => {
-                    t.classList.add('opacity-0', 'translate-y-[-20px]');
-                    t.classList.remove('opacity-100', 'translate-y-0');
-                }, 2000);
-            },
-
-            openModal(type) {
-                const overlay = document.getElementById('modalOverlay');
-                const title = document.getElementById('modalTitle');
-                const content = document.getElementById('modalContent');
-                overlay.classList.remove('hidden');
-                overlay.classList.add('flex');
-
-                if(type === 'deposit') {
-                    title.innerText = "شحن المحفظة";
-                    content.innerHTML = `
-                        <input type="number" id="mAmount" class="w-full bg-slate-950 p-4 rounded-2xl mb-3 text-center font-bold outline-none border border-slate-800" placeholder="المبلغ">
-                        <input type="password" id="mPin" class="w-full bg-slate-950 p-4 rounded-2xl mb-4 text-center outline-none border border-slate-800" placeholder="كود الوكيل">
-                        <button onclick="core.processTrans('deposit')" class="w-full bg-green-600 py-4 rounded-2xl font-black shadow-lg">تأكيد الإيداع</button>
-                    `;
-                } else if(type === 'withdraw') {
-                    title.innerText = "سحب الأرباح";
-                    content.innerHTML = `
-                        <input type="number" id="mAmount" class="w-full bg-slate-950 p-4 rounded-2xl mb-3 text-center font-bold outline-none border border-slate-800" placeholder="المبلغ">
-                        <input type="password" id="mPin" class="w-full bg-slate-950 p-4 rounded-2xl mb-4 text-center outline-none border border-slate-800" placeholder="كود الوكيل">
-                        <button onclick="core.processTrans('withdraw')" class="w-full bg-red-600 py-4 rounded-2xl font-black shadow-lg">تأكيد السحب</button>
-                    `;
-                }
-            },
-
-            closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); },
-
-            processTrans(type) {
-                const amt = parseFloat(document.getElementById('mAmount').value);
-                const pin = document.getElementById('mPin').value;
-                if(pin !== this.config.adminPin) return this.notify("كود الوكيل خاطئ", "error");
-                if(type === 'deposit') { this.state.balance += amt; this.notify("تم الشحن"); }
-                else { if(this.state.balance < amt) return this.notify("رصيد ناقص", "error"); this.state.balance -= amt; this.notify("طلب السحب قيد المعالجة"); }
-                this.save(); this.closeModal();
-            },
-
-            // CRASH ENGINE
-            crashSync: { status: 'WAITING', multiplier: 1.00, target: 2.00, bets: [] },
-            startCrashSystem() {
-                const tick = () => {
-                    if(this.crashSync.status === 'RUNNING') {
-                        // Growth speed increases with multiplier
-                        let speedFactor = 0.01 * (1 + (this.crashSync.multiplier - 1) * 0.4);
-                        this.crashSync.multiplier += speedFactor;
-                        
-                        if(this.crashSync.multiplier >= this.crashSync.target) {
-                            this.crashSync.status = 'BOOM';
-                            setTimeout(() => this.resetCrash(), 4000);
-                        }
-                    }
-                    if(document.getElementById('crash_mult')) games.crash.updateView();
-                    setTimeout(tick, 100);
-                };
-                this.resetCrash();
-                tick();
-            },
-
-            resetCrash() {
-                this.crashSync.status = 'WAITING';
-                this.crashSync.multiplier = 1.00;
-                // Fair target generation
-                const rand = Math.random();
-                if(rand < 0.1) this.crashSync.target = 1.00; // instant crash
-                else if(rand < 0.8) this.crashSync.target = 1.1 + Math.random() * 2.5;
-                else this.crashSync.target = 3.5 + Math.random() * 15;
-                
-                this.crashSync.bets = this.generateBots();
-                setTimeout(() => this.crashSync.status = 'RUNNING', 5000);
-            },
-
-            generateBots() {
-                const names = ['عمر', 'مازن', 'Ali_Pro', 'Tiger', 'Leo', 'Mero', 'King_99'];
-                return names.map(n => ({ user: n, amt: Math.floor(Math.random()*100)+20, cashout: (1.1 + Math.random()*2).toFixed(2), cashed: false }));
-            },
-
-            renderHome(v) {
-                v.innerHTML = `
-                    <div class="mb-6"><h2 class="text-2xl font-black">أهلاً، ${this.state.user} 👋</h2><p class="text-slate-500 text-sm">اختر اللعبة وابدأ في مضاعفة أموالك</p></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div onclick="core.route('crash')" class="bg-gradient-to-br from-blue-600 to-indigo-900 p-5 rounded-3xl h-44 flex flex-col justify-between shadow-lg">
-                            <i class="fa-solid fa-rocket text-4xl"></i>
-                            <h3 class="font-black text-xl">كراش</h3>
-                        </div>
-                        <div onclick="core.route('apples')" class="bg-gradient-to-br from-red-600 to-rose-900 p-5 rounded-3xl h-44 flex flex-col justify-between shadow-lg">
-                            <i class="fa-solid fa-apple-whole text-4xl"></i>
-                            <h3 class="font-black text-xl">التفاحة</h3>
-                        </div>
-                        <div onclick="core.route('penalty')" class="bg-gradient-to-br from-green-600 to-emerald-900 p-5 rounded-3xl h-44 flex flex-col justify-between shadow-lg">
-                            <i class="fa-solid fa-futbol text-4xl"></i>
-                            <h3 class="font-black text-xl">ضربات جزاء</h3>
-                        </div>
-                        <div onclick="core.route('dice')" class="bg-gradient-to-br from-amber-500 to-orange-800 p-5 rounded-3xl h-44 flex flex-col justify-between shadow-lg">
-                            <i class="fa-solid fa-dice text-4xl"></i>
-                            <h3 class="font-black text-xl">لعبة الزهر</h3>
-                        </div>
-                    </div>
-                `;
-            },
-
-            renderCasino(v) {
-                v.innerHTML = `
-                    <h2 class="text-2xl font-black mb-6">ردهة الكازينو 🎰</h2>
-                    <div class="grid gap-4">
-                        <div onclick="games.slots.render(document.getElementById('appView'))" class="bg-slate-900 p-6 rounded-3xl border border-white/5 flex items-center justify-between cursor-pointer">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-bolt"></i></div>
-                                <div><h4 class="font-black">سلوتس فيغاس</h4><p class="text-[10px] text-slate-500">اربح حتى 1000x</p></div>
-                            </div>
-                            <i class="fa-solid fa-chevron-left text-xs opacity-30"></i>
-                        </div>
-                        <div onclick="games.roulette.render(document.getElementById('appView'))" class="bg-slate-900 p-6 rounded-3xl border border-white/5 flex items-center justify-between cursor-pointer">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-circle-notch"></i></div>
-                                <div><h4 class="font-black">روليت</h4><p class="text-[10px] text-slate-500">توقع اللون أو الرقم</p></div>
-                            </div>
-                            <i class="fa-solid fa-chevron-left text-xs opacity-30"></i>
-                        </div>
-                    </div>
-                `;
-            },
-
-            renderProfile(v) {
-                v.innerHTML = `
-                    <div class="bg-slate-900 p-8 rounded-[2.5rem] border border-white/5 text-center">
-                        <div class="w-20 h-20 bg-blue-600 rounded-full mx-auto flex items-center justify-center text-3xl font-black mb-4">${this.state.user[0]}</div>
-                        <h2 class="text-xl font-black mb-8">${this.state.user}</h2>
-                        <div class="space-y-3">
-                            <button onclick="core.openModal('deposit')" class="w-full bg-green-600 py-4 rounded-2xl font-black">إيداع</button>
-                            <button onclick="core.openModal('withdraw')" class="w-full bg-slate-800 py-4 rounded-2xl font-black">سحب</button>
-                            <button onclick="localStorage.clear(); location.reload()" class="w-full py-4 text-red-500 text-xs font-bold uppercase">تسجيل خروج</button>
-                        </div>
-                    </div>
-                `;
-            }
+        // --- System State ---
+        const MIN_BET = 5;
+        const PIN_CODE = "208090";
+        const STORAGE_KEY = "winnix_v4_local_save";
+        
+        let state = {
+            username: null,
+            balance: 0.0, // تم التعديل إلى 0
+            lastSpin: 0
         };
 
-        const games = {
-            // CRASH FIX
-            crash: {
-                myBet: 0, cashed: false,
-                render(v) {
-                    v.innerHTML = `
-                        <div class="bg-slate-950 rounded-[2.5rem] p-6 border border-white/5 mb-4 relative overflow-hidden h-60 flex flex-col items-center justify-center">
-                            <div id="crash_rocket" class="rocket-anim absolute left-10 bottom-10"><i class="fa-solid fa-rocket text-5xl text-blue-500"></i></div>
-                            <h1 id="crash_mult" class="text-7xl font-black italic">1.00x</h1>
-                            <p id="crash_msg" class="text-xs font-bold mt-2 text-blue-400">تحميل الجولة...</p>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div class="bg-slate-900 p-4 rounded-2xl border border-white/5">
-                                <span class="text-[10px] text-slate-500 block">مبلغ الرهان</span>
-                                <input type="number" id="cBet" value="10" class="bg-transparent w-full font-black text-xl outline-none">
-                            </div>
-                            <button id="cBtn" onclick="games.crash.handleAction()" class="bg-blue-600 rounded-2xl font-black text-xl shadow-lg">رهان</button>
-                        </div>
-                        <div class="bg-slate-900/50 rounded-2xl p-4 max-h-40 overflow-y-auto" id="crash_bets"></div>
-                    `;
-                },
-                updateView() {
-                    const sync = core.crashSync;
-                    const multEl = document.getElementById('crash_mult');
-                    const btn = document.getElementById('cBtn');
-                    if(!multEl) return;
+        const fakeNames = ["الأسطورة", "الفرعون", "Mido_99", "Capitano", "زيزو_مصر", "البرنس", "Kimo_X", "كابتن_هيمو"];
 
-                    if(sync.status === 'WAITING') {
-                        multEl.innerText = "WAITING";
-                        multEl.style.color = "white";
-                        if(!this.myBet) { btn.innerText = "رهان"; btn.className = "bg-blue-600 rounded-2xl font-black text-xl"; btn.disabled = false; }
-                    } else if(sync.status === 'RUNNING') {
-                        multEl.innerText = sync.multiplier.toFixed(2) + 'x';
-                        if(this.myBet && !this.cashed) {
-                            btn.innerText = "سحب " + (this.myBet * sync.multiplier).toFixed(2);
-                            btn.className = "bg-orange-500 text-black rounded-2xl font-black text-xl";
-                            btn.disabled = false;
-                        }
-                    } else {
-                        multEl.innerText = "BOOM";
-                        multEl.style.color = "#ef4444";
-                        if(this.myBet && !this.cashed) this.lose();
+        // --- Crash Engine ---
+        let crash = {
+            status: 'waiting',
+            multiplier: 1.00,
+            crashPoint: 0,
+            timeLeft: 6,
+            userBet: 0,
+            hasCashout: false,
+            players: [],
+            speed: 0.005,
+            isProcessingCashout: false
+        };
+
+        function init() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                state = JSON.parse(saved);
+            }
+            if (!state.username) {
+                document.getElementById('authScreen').classList.remove('hidden');
+            } else {
+                updateUI();
+                router('home');
+            }
+            startCrashLoop();
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('headerUsername').innerText = state.username || "";
+            document.getElementById('userBalance').innerText = state.balance.toFixed(2);
+            if(state.username) document.getElementById('avatarLetter').innerText = state.username[0].toUpperCase();
+        }
+
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            t.classList.remove('opacity-0');
+            setTimeout(() => t.classList.add('opacity-0'), 2000);
+        }
+
+        function handleLogin() {
+            const val = document.getElementById('usernameInput').value.trim();
+            if (val.length < 3) return showToast("الاسم قصير", "error");
+            state.username = val;
+            saveData();
+            document.getElementById('authScreen').classList.add('hidden');
+            router('home');
+        }
+
+        // --- CRASH LOGIC ---
+        function startCrashLoop() {
+            setInterval(() => {
+                if (crash.status === 'waiting') {
+                    crash.timeLeft -= 0.1;
+                    if (crash.timeLeft <= 0) {
+                        crash.status = 'flying';
+                        crash.speed = 0.005;
                     }
-                    
-                    const botList = document.getElementById('crash_bets');
-                    if(botList) {
-                        botList.innerHTML = sync.bets.map(b => `<div class="flex justify-between text-[10px] mb-1 font-bold"><span>${b.user}</span><span>${b.amt} EGP</span><span class="${sync.multiplier >= b.cashout ? 'text-green-500' : 'text-slate-500'}">${sync.multiplier >= b.cashout ? b.cashout+'x' : '...'}</span></div>`).join('');
+                } else if (crash.status === 'flying') {
+                    crash.speed += 0.0001; 
+                    crash.multiplier += (crash.multiplier * crash.speed);
+                    if (crash.multiplier >= crash.crashPoint) {
+                        crash.status = 'crashed';
+                        setTimeout(resetCrash, 3000);
                     }
-                },
-                handleAction() {
-                    const sync = core.crashSync;
-                    if(sync.status === 'WAITING') {
+                    updateFakePlayers();
+                }
+            }, 100);
+            resetCrash();
+        }
+
+        function resetCrash() {
+            crash.status = 'waiting';
+            crash.multiplier = 1.00;
+            crash.timeLeft = 6;
+            crash.userBet = 0;
+            crash.hasCashout = false;
+            crash.isProcessingCashout = false;
+            const r = Math.random();
+            if (r < 0.25) crash.crashPoint = 1.00 + Math.random() * 0.15;
+            else if (r < 0.8) crash.crashPoint = 1.15 + Math.random() * 1.5;
+            else crash.crashPoint = 2.5 + Math.random() * 8;
+            
+            crash.players = Array(6).fill(0).map(() => ({
+                name: fakeNames[Math.floor(Math.random()*fakeNames.length)],
+                bet: Math.floor(Math.random()*200) + 10,
+                out: false,
+                mult: 0
+            }));
+        }
+
+        function updateFakePlayers() {
+            crash.players.forEach(p => {
+                if (!p.out && Math.random() < 0.04 && crash.multiplier > 1.1) {
+                    p.out = true;
+                    p.mult = crash.multiplier;
+                }
+            });
+        }
+
+        // --- APPLES GAME ---
+        let appleGame = { active: false, step: 0, bet: 0, grid: [] };
+        function startAppleGame(bet) {
+            if (bet < MIN_BET) return showToast(`أقل رهان ${MIN_BET} جنيه`);
+            if (state.balance < bet) return showToast("رصيد غير كافٍ");
+            state.balance -= bet;
+            appleGame = { active: true, step: 0, bet: bet, grid: [] };
+            for(let i=0; i<10; i++) {
+                // Hard Mode: Only 2 apples in 5 slots
+                let row = [1, 1, 0, 0, 0].sort(() => Math.random() - 0.5);
+                appleGame.grid.push(row);
+            }
+            saveData();
+            renderApples(document.getElementById('mainContent'));
+        }
+
+        function pickApple(row, col) {
+            if(!appleGame.active || row !== appleGame.step) return;
+            const cell = event.currentTarget;
+            if(appleGame.grid[row][col] === 1) {
+                cell.innerHTML = '🍎';
+                cell.classList.add('win');
+                appleGame.step++;
+                if(appleGame.step > 9) {
+                    setTimeout(cashoutApples, 500);
+                } else {
+                    setTimeout(() => renderApples(document.getElementById('mainContent')), 300);
+                }
+            } else {
+                cell.innerHTML = '💣';
+                cell.classList.add('lose');
+                showToast("خسارة! صادفت قنبلة", "error");
+                appleGame.active = false;
+                setTimeout(() => router('apples'), 1500);
+            }
+        }
+
+        function cashoutApples() {
+            if(!appleGame.active || appleGame.step === 0) return;
+            const multipliers = [1.5, 2.3, 3.8, 6.5, 12, 25, 55, 120, 280, 600];
+            const win = appleGame.bet * multipliers[appleGame.step - 1];
+            state.balance += win;
+            appleGame.active = false;
+            saveData();
+            showToast(`تم السحب بنجاح! ربحت ${win.toFixed(2)}`);
+            router('apples');
+        }
+
+        // --- PENALTY GAME (NEW) ---
+        let penaltyGame = { active: false, bet: 0, score: 0 };
+        function startPenalty(bet) {
+            if (bet < MIN_BET) return showToast(`أقل رهان ${MIN_BET} جنيه`);
+            if (state.balance < bet) return showToast("رصيد غير كافٍ");
+            state.balance -= bet;
+            penaltyGame = { active: true, bet: bet, score: 0 };
+            saveData();
+            renderPenalty(document.getElementById('mainContent'));
+        }
+
+        function shoot(target) {
+            if(!penaltyGame.active) return;
+            const isGoal = Math.random() > 0.4; // 60% chance to score
+            const goaliePos = Math.floor(Math.random() * 5);
+            
+            if(isGoal) {
+                penaltyGame.score++;
+                showToast("جـوووووول! 🎉");
+                renderPenalty(document.getElementById('mainContent'));
+            } else {
+                showToast("صدها الحارس! 🧤 الخسارة محققة", "error");
+                penaltyGame.active = false;
+                setTimeout(() => router('penalty'), 1500);
+            }
+        }
+
+        function cashoutPenalty() {
+            if(!penaltyGame.active || penaltyGame.score === 0) return;
+            const mults = [0, 1.9, 3.8, 7.5, 15, 30];
+            const win = penaltyGame.bet * mults[Math.min(penaltyGame.score, 5)];
+            state.balance += win;
+            penaltyGame.active = false;
+            saveData();
+            showToast(`سحب ناجح! ربحت ${win.toFixed(2)}`);
+            router('penalty');
+        }
+
+        // --- DICE GAME ---
+        function playDice(choice) {
+            const betInput = document.getElementById('diceBet');
+            if(!betInput) return;
+            const bet = parseFloat(betInput.value);
+            if (bet < MIN_BET) return showToast(`أقل رهان ${MIN_BET} جنيه`);
+            if (state.balance < bet) return showToast("رصيد غير كافٍ");
+            
+            state.balance -= bet;
+            const d1 = Math.floor(Math.random()*6) + 1;
+            const d2 = Math.floor(Math.random()*6) + 1;
+            const sum = d1 + d2;
+            
+            document.getElementById('dice1').innerText = d1;
+            document.getElementById('dice2').innerText = d2;
+
+            let win = 0;
+            if (choice === 'under' && sum < 7) win = bet * 2.1;
+            else if (choice === 'over' && sum > 7) win = bet * 2.1;
+            else if (choice === 'exact' && sum === 7) win = bet * 5.0;
+
+            if (win > 0) {
+                state.balance += win;
+                showToast(`مبروك! ربحت ${win.toFixed(2)}`, "success");
+            } else {
+                showToast("للأسف، جرب مرة أخرى", "error");
+            }
+            saveData();
+        }
+
+        // --- WHEEL LOGIC ---
+        let isSpinning = false;
+        function spin() {
+            if (isSpinning) return;
+            const now = Date.now();
+            if (now - state.lastSpin < 3600000) { 
+                return showToast("يمكنك اللف مرة كل ساعة");
+            }
+
+            isSpinning = true;
+            const wheel = document.getElementById('wheel');
+            const randomDegree = Math.floor(Math.random() * 360) + 3600; 
+            wheel.style.transform = `rotate(${randomDegree}deg)`;
+
+            setTimeout(() => {
+                isSpinning = false;
+                state.lastSpin = Date.now();
+                const actualDegree = randomDegree % 360;
+                let prize = 0;
+                
+                if (actualDegree <= 90) prize = 5;
+                else if (actualDegree <= 180) prize = 0;
+                else if (actualDegree <= 270) prize = 20;
+                else prize = 2;
+
+                state.balance += prize;
+                saveData();
+                showToast(`لقد فزت بـ ${prize} جنيه!`);
+            }, 4000);
+        }
+
+        // --- ROUTING ---
+        function router(page) {
+            const main = document.getElementById('mainContent');
+            if(!main) return;
+            main.innerHTML = '';
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('text-blue-500', 'text-slate-500'));
+            const active = document.querySelector(`[data-page="${page}"]`);
+            if(active) active.classList.replace('text-slate-500', 'text-blue-500');
+
+            if(page === 'home') renderHome(main);
+            if(page === 'crash') renderCrash(main);
+            if(page === 'apples') renderApples(main);
+            if(page === 'dice') renderDice(main);
+            if(page === 'penalty') renderPenalty(main);
+            if(page === 'rewards') renderRewards(main);
+            if(page === 'profile') renderProfile(main);
+        }
+
+        function renderHome(main) {
+            main.innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div onclick="router('crash')" class="game-card p-5 rounded-3xl h-44 flex flex-col justify-between shadow-xl border-blue-500/20">
+                        <i class="fa-solid fa-rocket text-blue-500 text-4xl"></i>
+                        <div><p class="font-black">CRASH</p><p class="text-[10px] text-slate-500 font-bold">صاروخ الحظ</p></div>
+                    </div>
+                    <div onclick="router('penalty')" class="game-card p-5 rounded-3xl h-44 flex flex-col justify-between shadow-xl border-green-500/20">
+                        <i class="fa-solid fa-futbol text-green-500 text-4xl"></i>
+                        <div><p class="font-black italic">PENALTY</p><p class="text-[10px] text-green-500 font-bold text-xs">جديد 🔥</p></div>
+                    </div>
+                    <div onclick="router('apples')" class="game-card p-5 rounded-3xl h-44 flex flex-col justify-between shadow-xl border-red-500/20">
+                        <i class="fa-solid fa-apple-whole text-red-500 text-4xl"></i>
+                        <div><p class="font-black">APPLES</p><p class="text-[10px] text-slate-500 font-bold">شجرة التفاح</p></div>
+                    </div>
+                    <div onclick="router('dice')" class="game-card p-5 rounded-3xl h-44 flex flex-col justify-between shadow-xl border-yellow-500/20">
+                        <i class="fa-solid fa-dice text-yellow-500 text-4xl"></i>
+                        <div><p class="font-black">UNDER/OVER</p><p class="text-[10px] text-slate-500 font-bold">لعبة الزهر</p></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCrash(main) {
+            main.innerHTML = `
+                <div class="crash-canvas-container mb-4">
+                    <div class="rocket" id="rocketIcon">🚀<div class="rocket-fire"></div></div>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span id="crashMult" class="text-7xl font-black italic">1.00x</span>
+                        <span id="crashStatus" class="text-sm mt-3 font-bold text-blue-400">تحميل...</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                        <p class="text-[10px] text-slate-500 mb-1">الرهان (مِن 5)</p>
+                        <input type="number" id="cBet" value="10" class="bg-transparent w-full text-xl font-black outline-none text-blue-400">
+                    </div>
+                    <button id="cBtn" class="bg-blue-600 rounded-2xl font-black text-xl shadow-lg">مراهنة</button>
+                </div>
+                <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden p-3">
+                    <p class="text-[10px] text-slate-500 mb-2 font-bold">اللاعبون الحاليون</p>
+                    <div id="cPlayers" class="space-y-2 max-h-40 overflow-y-auto custom-scroll"></div>
+                </div>
+            `;
+            requestAnimationFrame(updateCrashUI);
+        }
+
+        function updateCrashUI() {
+            const multE = document.getElementById('crashMult');
+            if(!multE) return;
+            const statusE = document.getElementById('crashStatus');
+            const rocketE = document.getElementById('rocketIcon');
+            const btnE = document.getElementById('cBtn');
+            const playersE = document.getElementById('cPlayers');
+
+            if(crash.status === 'waiting') {
+                multE.innerText = `00:0${Math.ceil(crash.timeLeft)}`;
+                multE.style.color = "white";
+                statusE.innerText = "في انتظار الدور القادم...";
+                rocketE.style.transform = `translate(0,0)`;
+                
+                if(crash.userBet > 0) {
+                    btnE.innerText = "تم قبول الرهان"; 
+                    btnE.disabled = true; 
+                    btnE.className = "bg-slate-700 text-slate-400 rounded-2xl font-black";
+                } else {
+                    btnE.innerText = "مراهنة"; 
+                    btnE.disabled = false; 
+                    btnE.className = "bg-blue-600 rounded-2xl font-black";
+                    btnE.onclick = () => {
                         const amt = parseFloat(document.getElementById('cBet').value);
-                        if(core.state.balance < amt) return core.notify("رصيد ناقص", "error");
-                        core.state.balance -= amt;
-                        this.myBet = amt;
-                        this.cashed = false;
-                        core.save();
-                        document.getElementById('cBtn').innerText = "تم القبول";
-                        document.getElementById('cBtn').disabled = true;
-                    } else if(sync.status === 'RUNNING' && this.myBet && !this.cashed) {
-                        this.cashed = true;
-                        const win = this.myBet * sync.multiplier;
-                        core.state.balance += win;
-                        core.notify(`مبروك! ربحت ${win.toFixed(2)}`, "success");
-                        this.myBet = 0;
-                        core.save();
+                        if(amt < MIN_BET) return showToast(`أقل رهان ${MIN_BET} جنيه`);
+                        if(state.balance < amt) return showToast("رصيد غير كافٍ");
+                        state.balance -= amt; 
+                        crash.userBet = amt; 
+                        saveData();
+                    };
+                }
+            } else if(crash.status === 'flying') {
+                multE.innerText = crash.multiplier.toFixed(2) + "x";
+                statusE.innerText = "يحلّق الآن!";
+                const dist = Math.min(crash.multiplier * 35, 230);
+                rocketE.style.transform = `translate(${dist}px, -${dist/1.2}px)`;
+                
+                if(crash.userBet > 0 && !crash.hasCashout) {
+                    btnE.innerText = `سحب ${(crash.userBet * crash.multiplier).toFixed(2)}`;
+                    btnE.disabled = crash.isProcessingCashout; 
+                    btnE.className = "bg-yellow-500 text-black rounded-2xl font-black";
+                    btnE.onclick = () => {
+                        if(crash.isProcessingCashout) return;
+                        crash.isProcessingCashout = true;
+                        let win = crash.userBet * crash.multiplier;
+                        state.balance += win; 
+                        crash.hasCashout = true; 
+                        saveData();
+                        showToast(`ربحت ${win.toFixed(2)}`, "success");
+                    };
+                } else if(crash.hasCashout) {
+                    btnE.innerText = "تم السحب بنجاح"; 
+                    btnE.disabled = true; 
+                    btnE.className = "bg-green-900 text-green-400 rounded-2xl font-black";
+                } else {
+                    btnE.innerText = "بدأ الدور فعلياً"; 
+                    btnE.disabled = true; 
+                    btnE.className = "bg-slate-800 text-slate-600 rounded-2xl font-black";
+                }
+            } else {
+                multE.innerText = "CRASHED";
+                multE.style.color = "#ef4444";
+                statusE.innerText = `انفجر عند ${crash.multiplier.toFixed(2)}x`;
+                rocketE.style.transform = `scale(0)`;
+                if(crash.userBet > 0 && !crash.hasCashout) {
+                    btnE.innerText = "خسارة"; 
+                    btnE.disabled = true; 
+                    btnE.className = "bg-red-900 text-red-500 rounded-2xl font-black";
+                }
+            }
+            playersE.innerHTML = crash.players.map(p => `
+                <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded-xl text-[10px]">
+                    <span class="font-bold">${p.name}</span>
+                    <span class="text-slate-500">${p.bet} EGP</span>
+                    <span class="${p.out ? 'text-green-500' : 'text-slate-600'} font-black">${p.out ? p.mult.toFixed(2)+'x' : '...'}</span>
+                </div>
+            `).join('');
+            
+            if(document.getElementById('crashMult')) {
+                requestAnimationFrame(updateCrashUI);
+            }
+        }
+
+        function renderPenalty(main) {
+            if(!penaltyGame.active) {
+                main.innerHTML = `
+                    <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 text-center">
+                        <i class="fa-solid fa-futbol text-6xl text-green-500 mb-6 block"></i>
+                        <h2 class="text-2xl font-black mb-2 italic">Penalty Shootout</h2>
+                        <p class="text-slate-400 text-sm mb-6">سجل الأهداف واربح الملايين!</p>
+                        <input type="number" id="pBet" value="10" class="bg-slate-800 w-full p-4 rounded-2xl text-center text-xl font-black outline-none mb-4 border border-slate-700">
+                        <button onclick="startPenalty(parseFloat(document.getElementById('pBet').value))" class="w-full bg-green-600 py-4 rounded-2xl font-black text-xl shadow-xl">ابدأ المباراة</button>
+                    </div>
+                `;
+            } else {
+                const mults = [0, 1.9, 3.8, 7.5, 15, 30];
+                main.innerHTML = `
+                    <div class="flex justify-between items-center mb-6 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                         <div>
+                            <p class="text-[10px] text-slate-500">الرهان: ${penaltyGame.bet} EGP</p>
+                            <p class="font-black text-green-500">الأهداف: ${penaltyGame.score}</p>
+                         </div>
+                         <div class="text-right">
+                            <p class="text-[10px] text-slate-500 italic">الربح الحالي</p>
+                            <p class="font-black text-yellow-500">${(penaltyGame.bet * mults[penaltyGame.score]).toFixed(2)} EGP</p>
+                         </div>
+                    </div>
+                    
+                    <div class="relative bg-gradient-to-b from-green-800 to-green-600 h-64 rounded-3xl border-4 border-white/20 overflow-hidden flex flex-col items-center justify-center gap-8">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-white/50"></div>
+                        <div class="absolute top-0 left-10 bottom-0 w-1 bg-white/20"></div>
+                        <div class="absolute top-0 right-10 bottom-0 w-1 bg-white/20"></div>
+                        
+                        <div class="text-4xl">🧤</div>
+                        
+                        <div class="grid grid-cols-5 gap-4">
+                            <div onclick="shoot(0)" class="penalty-target"></div>
+                            <div onclick="shoot(1)" class="penalty-target"></div>
+                            <div onclick="shoot(2)" class="penalty-target"></div>
+                            <div onclick="shoot(3)" class="penalty-target"></div>
+                            <div onclick="shoot(4)" class="penalty-target"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="cashoutPenalty()" class="w-full mt-6 bg-yellow-500 text-black py-4 rounded-2xl font-black text-xl shadow-xl ${penaltyGame.score === 0 ? 'opacity-50 pointer-events-none' : ''}">سحب الأرباح</button>
+                `;
+            }
+        }
+
+        function renderApples(main) {
+            if(!appleGame.active) {
+                main.innerHTML = `
+                    <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 text-center">
+                        <i class="fa-solid fa-apple-whole text-6xl text-red-500 mb-6 block"></i>
+                        <h2 class="text-2xl font-black mb-2 italic">Apple Fortune</h2>
+                        <p class="text-slate-400 text-sm mb-6">احذر القنابل المختبئة!</p>
+                        <input type="number" id="aBet" value="10" class="bg-slate-800 w-full p-4 rounded-2xl text-center text-xl font-black outline-none mb-4 border border-slate-700">
+                        <button onclick="startAppleGame(parseFloat(document.getElementById('aBet').value))" class="w-full bg-red-600 py-4 rounded-2xl font-black text-xl shadow-xl">بدء اللعب</button>
+                    </div>
+                `;
+            } else {
+                const multipliers = [1.5, 2.3, 3.8, 6.5, 12, 25, 55, 120, 280, 600];
+                let rowsHtml = '';
+                for(let i=9; i>=0; i--) {
+                    rowsHtml += `
+                    <div class="flex items-center gap-3 mb-2 ${i === appleGame.step ? 'opacity-100' : 'opacity-40 pointer-events-none'}">
+                        <div class="w-12 text-[10px] font-bold text-slate-500">x${multipliers[i]}</div>
+                        <div class="grid grid-cols-5 gap-2 flex-1">`;
+                    for(let j=0; j<5; j++) {
+                        rowsHtml += `<div onclick="pickApple(${i}, ${j})" class="apple-cell">?</div>`;
                     }
-                },
-                lose() { this.myBet = 0; core.notify("خسارة!", "error"); }
-            },
+                    rowsHtml += `</div></div>`;
+                }
+                main.innerHTML = `
+                    <div class="flex justify-between items-center mb-4 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                        <div><p class="text-[10px] text-slate-500 font-bold">الرهان: ${appleGame.bet} EGP</p><p class="font-black text-green-500">الدور: ${appleGame.step + 1}/10</p></div>
+                        <button onclick="cashoutApples()" class="bg-yellow-500 text-black px-8 py-2 rounded-xl font-black text-sm">سحب الأرباح</button>
+                    </div>
+                    <div class="max-h-[60vh] overflow-y-auto pr-2 custom-scroll">${rowsHtml}</div>
+                `;
+            }
+        }
 
-            // PENALTY FIX
-            penalty: {
-                bet: 0, mult: 1.0, active: false,
-                render(v) {
-                    v.innerHTML = `
-                        <div class="bg-slate-900 p-6 rounded-3xl border border-white/5 mb-6 text-center">
-                            <h3 class="font-black text-green-500 mb-6 italic">PENALTY SHOOT</h3>
-                            <div class="goal-container rounded-t-xl overflow-hidden mb-6">
-                                <div id="p_goalie" class="absolute bottom-0 left-1/2 -translate-x-1/2 text-5xl">🧤</div>
-                                <div id="p_ball" class="ball"></div>
-                                <div onclick="games.penalty.shoot(1)" class="absolute top-4 left-4 w-16 h-16 border-2 border-white/10 rounded-full"></div>
-                                <div onclick="games.penalty.shoot(2)" class="absolute top-4 right-4 w-16 h-16 border-2 border-white/10 rounded-full"></div>
-                                <div onclick="games.penalty.shoot(3)" class="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-16 border-2 border-white/10 rounded-full"></div>
+        function renderDice(main) {
+            main.innerHTML = `
+                <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 text-center">
+                    <h2 class="text-2xl font-black text-yellow-500 mb-2 italic">UNDER / OVER 7</h2>
+                    <p class="text-[10px] text-slate-500 mb-6 font-bold">توقع مجموع حجري النرد</p>
+                    <div class="flex justify-center gap-4 mb-8">
+                        <div id="dice1" class="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-black text-3xl font-bold shadow-lg">?</div>
+                        <div id="dice2" class="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-black text-3xl font-bold shadow-lg">?</div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-6">
+                        <button onclick="playDice('under')" class="bg-red-600/20 border border-red-500/50 py-4 rounded-xl font-bold flex flex-col items-center hover:bg-red-600/40">
+                            <span class="text-xs">Under 7</span><span class="text-[10px] text-red-500">x2.1</span>
+                        </button>
+                        <button onclick="playDice('exact')" class="bg-blue-600/20 border border-blue-500/50 py-4 rounded-xl font-bold flex flex-col items-center hover:bg-blue-600/40">
+                            <span class="text-xs">7 Exact</span><span class="text-[10px] text-blue-500">x5.0</span>
+                        </button>
+                        <button onclick="playDice('over')" class="bg-green-600/20 border border-green-500/50 py-4 rounded-xl font-bold flex flex-col items-center hover:bg-green-600/40">
+                            <span class="text-xs">Over 7</span><span class="text-[10px] text-green-500">x2.1</span>
+                        </button>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700">
+                         <p class="text-[10px] text-slate-500 mb-1">رهانك</p>
+                         <input type="number" id="diceBet" value="10" class="bg-transparent text-center w-full text-2xl font-black outline-none text-blue-400">
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRewards(main) {
+            main.innerHTML = `
+                <div class="flex flex-col items-center py-10 bg-slate-900 rounded-3xl border border-slate-800">
+                    <h2 class="text-2xl font-black mb-8 italic">عجلة الحظ</h2>
+                    <div class="relative">
+                        <div id="wheel" class="w-64 h-64 rounded-full border-8 border-slate-800 relative shadow-2xl overflow-hidden" 
+                             style="background: conic-gradient(#3b82f6 0% 25%, #ef4444 25% 50%, #8b5cf6 50% 75%, #10b981 75% 100%)">
+                            <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold">
+                                <span class="absolute" style="transform: rotate(45deg) translateY(-80px)">5 EGP</span>
+                                <span class="absolute" style="transform: rotate(135deg) translateY(-80px)">0 EGP</span>
+                                <span class="absolute" style="transform: rotate(225deg) translateY(-80px)">20 EGP</span>
+                                <span class="absolute" style="transform: rotate(315deg) translateY(-80px)">2 EGP</span>
                             </div>
-                            <div class="bg-black/40 p-4 rounded-2xl flex justify-between"><span class="text-xs text-slate-500">المبلغ الحالي</span><span id="p_pot" class="font-black text-green-500">0.00</span></div>
                         </div>
-                        <div id="p_ctrl" class="grid grid-cols-2 gap-4">
-                            <input type="number" id="pBet" value="10" class="bg-slate-900 p-4 rounded-2xl text-center font-bold border border-white/5">
-                            <button onclick="games.penalty.start()" class="bg-green-600 rounded-2xl font-black">ابدأ</button>
-                        </div>
-                    `;
-                },
-                start() {
-                    const amt = parseFloat(document.getElementById('pBet').value);
-                    if(core.state.balance < amt) return core.notify("رصيد ناقص", "error");
-                    core.state.balance -= amt;
-                    this.bet = amt; this.mult = 1.0; this.active = true;
-                    document.getElementById('p_ctrl').innerHTML = `<button onclick="games.penalty.cashout()" class="col-span-2 bg-orange-500 text-black py-4 rounded-2xl font-black">سحب الأرباح</button>`;
-                    core.save();
-                },
-                shoot(target) {
-                    if(!this.active) return;
-                    const goaliePos = Math.floor(Math.random()*3)+1;
-                    const goalie = document.getElementById('p_goalie');
-                    const ball = document.getElementById('p_ball');
-                    
-                    if(goaliePos === 1) goalie.style.left = "20%";
-                    else if(goaliePos === 2) goalie.style.left = "80%";
-                    else goalie.style.left = "50%";
-                    
-                    if(target === 1) ball.style.cssText = "bottom: 150px; left: 20%;";
-                    else if(target === 2) ball.style.cssText = "bottom: 150px; left: 80%;";
-                    else ball.style.cssText = "bottom: 150px; left: 50%;";
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 w-4 h-8 bg-white rounded-full z-10 shadow-lg"></div>
+                    </div>
+                    <button onclick="spin()" class="mt-12 bg-yellow-500 text-black px-12 py-4 rounded-2xl font-black text-xl shadow-xl active:scale-95 transition-transform">لف العجلة مجاناً</button>
+                    <p class="text-[10px] text-slate-500 mt-4 font-bold italic">متاحة مرة كل ساعة لزيادة رصيدك</p>
+                </div>
+            `;
+        }
 
-                    setTimeout(() => {
-                        if(goaliePos === target) {
-                            core.notify("صدها الحارس!", "error");
-                            this.lose();
-                        } else {
-                            this.mult *= 1.5;
-                            document.getElementById('p_pot').innerText = (this.bet * this.mult).toFixed(2);
-                            core.notify("جـــــوووول!");
-                            setTimeout(() => {
-                                ball.style.cssText = "bottom: 10px; left: 50%; transform: translateX(-50%);";
-                                goalie.style.cssText = "bottom: 0; left: 50%; transform: translateX(-50%);";
-                            }, 800);
-                        }
-                    }, 500);
-                },
-                cashout() {
-                    const win = this.bet * this.mult;
-                    core.state.balance += win;
-                    core.notify(`تم سحب ${win.toFixed(1)}`);
-                    this.active = false; core.save(); core.route('penalty');
-                },
-                lose() { this.active = false; setTimeout(() => core.route('penalty'), 1500); }
-            },
+        function renderProfile(main) {
+            main.innerHTML = `
+                <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800">
+                    <h2 class="text-xl font-black mb-6 italic">حسابي الشخصي</h2>
+                    <div class="bg-slate-800 p-4 rounded-2xl mb-4 flex justify-between border border-slate-700">
+                        <span class="text-slate-400">الاسم:</span>
+                        <span class="font-black text-blue-400">${state.username}</span>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-2xl mb-6 flex justify-between border border-slate-700">
+                        <span class="text-slate-400">الرصيد:</span>
+                        <span class="font-black text-green-500">${state.balance.toFixed(2)} EGP</span>
+                    </div>
+                    <button onclick="localStorage.clear(); location.reload();" class="w-full bg-red-600/10 text-red-500 py-4 rounded-2xl font-bold border border-red-500/20">تسجيل الخروج ومسح البيانات</button>
+                </div>
+            `;
+        }
 
-            // APPLE GAME
-            apples: {
-                level: 0, bet: 0, active: false,
-                render(v) {
-                    v.innerHTML = `
-                        <div class="bg-slate-900 p-6 rounded-3xl border border-white/5 mb-6 text-center">
-                            <h3 class="font-black text-red-500 mb-4">لعبة التفاحة</h3>
-                            <div class="flex flex-col-reverse gap-2" id="aGrid"></div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <input type="number" id="aBet" value="10" class="bg-slate-900 p-4 rounded-2xl text-center font-bold border border-white/5 outline-none">
-                            <button id="aBtn" onclick="games.apples.start()" class="bg-red-600 rounded-2xl font-black">ابدأ</button>
-                        </div>
-                    `;
-                    this.build();
-                },
-                build() {
-                    const g = document.getElementById('aGrid');
-                    for(let i=0; i<10; i++) {
-                        const row = document.createElement('div');
-                        row.className = "flex gap-2 opacity-30 pointer-events-none"; row.id = `ar_${i}`;
-                        for(let j=0; j<5; j++) row.innerHTML += `<div onclick="games.apples.pick(${i},${j})" class="flex-1 aspect-square bg-slate-800 rounded-xl border border-white/5 flex items-center justify-center cursor-pointer">?</div>`;
-                        g.appendChild(row);
-                    }
-                },
-                start() {
-                    const amt = parseFloat(document.getElementById('aBet').value);
-                    if(core.state.balance < amt) return core.notify("رصيد ناقص", "error");
-                    core.state.balance -= amt; this.bet = amt; this.level = 0; this.active = true;
-                    document.getElementById('aBtn').innerText = "سحب";
-                    document.getElementById('aBtn').onclick = () => this.cashout();
-                    this.next(); core.save();
-                },
-                next() {
-                    document.querySelectorAll('[id^="ar_"]').forEach(r => r.className = "flex gap-2 opacity-30 pointer-events-none");
-                    const r = document.getElementById(`ar_${this.level}`);
-                    if(r) r.className = "flex gap-2 active-row";
-                },
-                pick(r, c) {
-                    if(!this.active || r !== this.level) return;
-                    let bombs = this.level < 3 ? 1 : (this.level < 6 ? 2 : 3);
-                    const isBomb = Math.random() < (bombs/5);
-                    const cell = document.getElementById(`ar_${r}`).children[c];
-                    if(isBomb) { cell.innerText = "💣"; cell.className += " bg-red-600"; this.lose(); }
-                    else { cell.innerText = "🍎"; cell.className += " bg-green-600"; this.level++; if(this.level >= 10) this.cashout(); else this.next(); }
-                },
-                cashout() {
-                    const mults = [1.2, 1.5, 1.93, 2.4, 3.8, 6.5, 12, 25, 50, 100];
-                    const win = this.bet * (this.level > 0 ? mults[this.level-1] : 1);
-                    core.state.balance += win; core.notify(`ربحت ${win.toFixed(1)}`);
-                    this.active = false; core.save(); core.route('apples');
-                },
-                lose() { this.active = false; core.save(); setTimeout(() => core.route('apples'), 1500); }
-            },
+        function openModal(type) {
+            const m = document.getElementById('modal');
+            const t = document.getElementById('modalTitle');
+            const b = document.getElementById('modalBody');
+            m.classList.remove('hidden');
+            if(type === 'deposit') {
+                t.innerText = "إيداع رصيد";
+                b.innerHTML = `
+                    <p class="text-xs text-slate-400 mb-4 font-bold">أدخل الكود الخاص بك لشحن المحفظة</p>
+                    <input type="number" id="dAmount" class="w-full bg-slate-800 p-4 rounded-xl mb-3 outline-none border border-slate-700 focus:border-blue-500" placeholder="المبلغ">
+                    <input type="password" id="dPin" class="w-full bg-slate-800 p-4 rounded-xl mb-3 outline-none border border-slate-700 focus:border-blue-500" placeholder="كود الوكيل">
+                    <button onclick="confirmDep()" class="w-full bg-blue-600 py-4 rounded-xl font-bold shadow-lg">شحن الرصيد</button>
+                `;
+            }
+        }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        function confirmDep() {
+            const amtE = document.getElementById('dAmount');
+            const pinE = document.getElementById('dPin');
+            const amt = parseFloat(amtE.value);
+            if(isNaN(amt) || amt <= 0) return showToast("ادخل مبلغ صحيح", "error");
+            if(pinE.value === PIN_CODE) {
+                state.balance += amt; saveData(); closeModal(); showToast("تم إضافة الرصيد بنجاح");
+            } else showToast("كود الوكيل غير صحيح", "error");
+        }
 
-            // SLOTS
-            slots: {
-                render(v) {
-                    v.innerHTML = `
-                        <div class="bg-slate-900 p-8 rounded-[2.5rem] border border-white/5 text-center">
-                            <h3 class="font-black text-purple-500 mb-8">سلوتس فيغاس 🎰</h3>
-                            <div class="grid grid-cols-3 gap-2 mb-8">
-                                <div class="slot-reel" id="r1"><div class="slot-item">🍒</div></div>
-                                <div class="slot-reel" id="r2"><div class="slot-item">🍒</div></div>
-                                <div class="slot-reel" id="r3"><div class="slot-item">🍒</div></div>
-                            </div>
-                            <input type="number" id="sBet" value="10" class="w-full bg-black/40 p-4 rounded-2xl text-center font-bold mb-4 outline-none border border-white/5">
-                            <button onclick="games.slots.spin()" class="w-full bg-purple-600 py-4 rounded-2xl font-black shadow-lg">SPIN</button>
-                        </div>
-                    `;
-                },
-                spin() {
-                    const amt = parseFloat(document.getElementById('sBet').value);
-                    if(core.state.balance < amt) return core.notify("رصيد ناقص", "error");
-                    core.state.balance -= amt; core.save();
-                    
-                    const icons = ['🍒', '🍋', '🍇', '💎', '7️⃣'];
-                    const res = [icons[Math.floor(Math.random()*5)], icons[Math.floor(Math.random()*5)], icons[Math.floor(Math.random()*5)]];
-                    
-                    [1,2,3].forEach(i => {
-                        const el = document.getElementById(`r${i}`).firstChild;
-                        el.style.transform = "translateY(-100px)";
-                        setTimeout(() => {
-                            el.innerText = r
+        init();
+    </script>
+</body>
+</html>
